@@ -1,6 +1,8 @@
 body {
+	position: relative;
 	width: 400px;
 	max-width: 90%;
+	min-width: 50%;
 	margin: 32px auto;
 	font-family: Calibri, Arial, Sans;
 	border: 1px solid #b8b8b8;
@@ -15,10 +17,34 @@ h1 {
 	margin-bottom: 32px;
 }
 
+.back {
+	display: block;
+	position: absolute;
+	right: 40px;
+	top: 24px;
+	font-size: 32px;
+}
+
 a, a:visited {
 	text-decoration: none;
 	font-weight: bold;
 	color: #124758;
+}
+
+.card {
+	display: block;
+	float: left;
+	width: 30%;
+	margin: 1.5%;
+	box-sizing: border-box;
+	border: 1px solid #949494;
+	text-align: center;
+	height: 2em;
+	line-height: 2em;
+}
+
+form {
+	clear: both;
 }
 
 input {
@@ -38,5 +64,3 @@ input.selected {
 	background-color: #126631;
 	color: #e0e0e0;
 }
-
-

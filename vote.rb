@@ -1,7 +1,7 @@
 require 'sinatra'
 
 # use local-ip here
-set :bind, '192.168.1.201'
+set :bind, '0.0.0.0'
 set :port, 4444
 
 admin = 'vaOPhSbcDuvY5y8tr2hKGBn9dT5tdI5r'

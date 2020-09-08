@@ -1,0 +1,42 @@
+body {
+	width: 400px;
+	max-width: 90%;
+	margin: 32px auto;
+	font-family: Calibri, Arial, Sans;
+	border: 1px solid #b8b8b8;
+	box-shadow: 5px 10px 18px #c3c3c3;
+	padding: 32px;
+	box-sizing: border-box;
+}
+
+h1 {
+	color: #03303F;
+	border-bottom: 1px solid #b8b8b8;
+	margin-bottom: 32px;
+}
+
+a, a:visited {
+	text-decoration: none;
+	font-weight: bold;
+	color: #124758;
+}
+
+input {
+	margin: 12px 0;
+	border: 1px solid #949494;
+	padding: 6px;
+	width: 100%;
+}
+
+input[type="submit"] {
+	width: 50%;
+	background-color: #124758;
+	color: #e0e0e0;
+}
+
+input.selected {
+	background-color: #126631;
+	color: #e0e0e0;
+}
+
+

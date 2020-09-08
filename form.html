@@ -1,0 +1,29 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    <script>
+			function clickButton(button) {
+				var elem = document.getElementById('voted');
+				var items = elem.value.split(';').filter(function(item) { return item!=''; });
+				if (items.indexOf(button.value)==-1) {
+					items.push(button.value);
+					button.className = 'selected';
+				}
+				else {
+					items.splice(items.indexOf(button.value),1);
+					button.className = '';
+				}
+				elem.value = items.join(';');
+			}
+    </script>
+		<link rel="stylesheet" media="screen" href="/style.css">
+  </head>
+  <body>
+    <h1>{{title}}</h1>
+    <form method="post" action="">
+      {{form}}
+    </form>
+  </body>
+</html>

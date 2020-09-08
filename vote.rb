@@ -19,7 +19,7 @@ def valid?(code)
 end
 
 get '/' do
-  form = '<input type="text" name="code" value="" /><input type="submit" value="senden" />'
+  form = '<input type="text" name="code" value="" /><br /><input type="submit" value="senden" />'
   return form('Anmelden',form)
 end
 

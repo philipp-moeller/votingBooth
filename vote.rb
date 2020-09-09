@@ -36,7 +36,13 @@ post '/' do
 	else
 		if code==config['adminPassword'] then
 			session[:admin] = true
-			redirect '/admin'
+			if session[:redirect]!=false then
+				page = session[:redirect]
+				session[:redirect] = false
+			else
+				page = '/admin'
+			end
+			redirect page
 		else
 			redirect '/'
 		end
@@ -46,10 +52,12 @@ end
 get '/admin' do
 	if session[:admin] then
 		text = '<input type="button" onclick="window.location.href=\'/codes\'" value="Codes anzeigen">'
-		text += '<input type="button" onclick="window.location.href=\'/result\'" value="Ergebnis anzeigen">'
+		text += '<input type="button" onclick="window.location.href=\'/options\'" value="Wahlmöglichkeiten anzeigen">'
+		text += '<input type="button" onclick="window.location.href=\'/results\'" value="Ergebnis anzeigen">'
 		text += '<form method="post" action=""><input type="submit" value="abmelden" /></form>'
 		return plain('Administration',text)
 	else
+		session[:redirect] = '/admin'
 		redirect '/'
 	end
 end
@@ -59,7 +67,31 @@ post '/admin' do
 	redirect '/'
 end
 
-get '/result' do
+get '/options' do
+	if session[:admin] then
+		options = File.read('options.txt')
+		text = '<a class="back" href="/admin">&#11176;</a>';
+		text += '<p>Hinweis: Beim Speichern der Wahlmöglichkeiten werden alle bisherigen Daten ohne Nachfrage zurückgesetzt.</p>'
+		form = '<textarea name="options" rows="12">'+options+'</textarea>'
+		form += '<input type="submit" value="speichern" />'
+	  return form('Optionen',form,text)
+	else
+		session[:redirect] = '/options'
+		redirect '/'
+	end
+end
+
+post '/options' do
+	if session[:admin] then
+		File.write('options.txt',params[:options])
+		File.write('votes.txt','')
+	  redirect '/options'
+	else
+		redirect '/'
+	end
+end
+
+get '/results' do
 	if session[:admin] then
 	  options = File.read('options.txt').split("\n")
 	  votes = File.read('votes.txt').split("\n")
@@ -82,6 +114,7 @@ get '/result' do
 		end
 	  return plain('Ergebnisse',content)
 	else
+		session[:redirect] = '/results'
 		redirect '/'
 	end
 end
@@ -90,12 +123,14 @@ get '/codes' do
 	if session[:admin] then
 		codes = File.read('codes.txt').split("\n")
 		text = '<a class="back" href="/admin">&#11176;</a>';
+		text += '<p>Hinweis: Beim Erstellen neuer Codes werden alle bisherigen Daten ohne Nachfrage zurückgesetzt.</p>'
 		for code in codes do
 			text += '<div class="card">'+code+'</div>'
 		end
 		text += '<form method="post" action=""><input type="submit" value="Neu generieren" /></form>'
 	  return plain('Codes',text)
 	else
+		session[:redirect] = '/codes'
 		redirect '/'
 	end
 end
@@ -108,6 +143,7 @@ post '/codes' do
 			codes.push(set[rand(set.length)]+set[rand(set.length)]+set[rand(set.length)])
 		end
 		File.write('codes.txt',codes.join("\n"))
+		File.write('votes.txt','')
 	  redirect '/codes'
 	else
 		redirect '/'

@@ -36,7 +36,7 @@ post '/' do
 	else
 		if code==config['adminPassword'] then
 			session[:admin] = true
-			if session[:redirect]!=false then
+			if session[:redirect] then
 				page = session[:redirect]
 				session[:redirect] = false
 			else

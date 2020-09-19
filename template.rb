@@ -59,9 +59,6 @@ class Template
 	end
 
 	def parseConditions(string)
-		puts '''
-			parsing conditions ...
-		'''
 		regexp = Regexp.new('{{\?('+VAR_IDENTIFIER+')}}(.*?)({{:\?}}.*?)?{{\/\?}}',Regexp::MULTILINE)
 		matches = string.scan(regexp)
 		while !matches.empty? do

@@ -1,32 +1,28 @@
 require 'sinatra'
-
-# use local-ip here
-set :bind, '0.0.0.0'
-set :port, 4444
-enable :sessions
+load 'template.rb'
 
 configFile = File.read('.config').split("\n")
 config = {}
 for row in configFile do
 	configData = row.split(':')
-	config[configData[0]] = configData[1]
+	config[configData[0].to_sym] = configData[1]
 end
 
-def form(title,form,text)
-	return File.read('form.html').gsub('{{title}}',title).sub('{{text}}',text).sub('{{form}}',form)
-end
+set :bind, config[:host]
+set :port, config[:port]
+enable :sessions
 
-def plain(title,text)
-	return File.read('plain.html').gsub('{{title}}',title).sub('{{text}}',text)
-end
+session = {:success => false, :error => false, :admin => false, :redirect => false}
 
 def valid?(code)
 	return File.read('codes.txt').split("\n").include?(code)
 end
 
 get '/' do
-  form = '<input type="text" name="code" value="" /><br /><input type="submit" value="senden" />'
-  return form('Anmelden',form,'')
+	tpl = Template.new('login',{:success => session[:success], :error => session[:error]})
+	session[:success] = false
+	session[:error] = false
+  return tpl.parse
 end
 
 post '/' do
@@ -34,16 +30,13 @@ post '/' do
 	if valid?(code) then
 		redirect '/'+code
 	else
-		if code==config['adminPassword'] then
+		if code==config[:adminPassword] then
+			page = session[:redirect] ? session[:redirect] : '/admin'
 			session[:admin] = true
-			if session[:redirect] then
-				page = session[:redirect]
-				session[:redirect] = false
-			else
-				page = '/admin'
-			end
+			session[:redirect] = false
 			redirect page
 		else
+			session[:error] = 'Login fehlgeschlagen'
 			redirect '/'
 		end
 	end
@@ -51,11 +44,8 @@ end
 
 get '/admin' do
 	if session[:admin] then
-		text = '<input type="button" onclick="window.location.href=\'/codes\'" value="Codes anzeigen">'
-		text += '<input type="button" onclick="window.location.href=\'/options\'" value="Wahlmöglichkeiten anzeigen">'
-		text += '<input type="button" onclick="window.location.href=\'/results\'" value="Ergebnis anzeigen">'
-		text += '<form method="post" action=""><input type="submit" value="abmelden" /></form>'
-		return plain('Administration',text)
+		tpl = Template.new('admin',{})
+		return tpl.parse
 	else
 		session[:redirect] = '/admin'
 		redirect '/'
@@ -64,17 +54,16 @@ end
 
 post '/admin' do
 	session[:admin] = false
+	session[:success] = 'Erfolgreich abgemeldet'
 	redirect '/'
 end
 
 get '/options' do
 	if session[:admin] then
 		options = File.read('options.txt')
-		text = '<a class="back" href="/admin">&#11176;</a>';
-		text += '<p>Hinweis: Beim Speichern der Wahlmöglichkeiten werden alle bisherigen Daten ohne Nachfrage zurückgesetzt.</p>'
-		form = '<textarea name="options" rows="12">'+options+'</textarea>'
-		form += '<input type="submit" value="speichern" />'
-	  return form('Optionen',form,text)
+		tpl = Template.new('options',{:options => options, :success => session[:success]})
+		session[:success] = false
+		return tpl.parse
 	else
 		session[:redirect] = '/options'
 		redirect '/'
@@ -85,6 +74,7 @@ post '/options' do
 	if session[:admin] then
 		File.write('options.txt',params[:options])
 		File.write('votes.txt','')
+		session[:success] = 'Wahlmöglichkeiten erfolgreich gespeichert'
 	  redirect '/options'
 	else
 		redirect '/'
@@ -95,24 +85,22 @@ get '/results' do
 	if session[:admin] then
 	  options = File.read('options.txt').split("\n")
 	  votes = File.read('votes.txt').split("\n")
-		results = {}
+		results = []
 		for option in options do
-			results[option] = 0
+			results.push({:name => option.chop, :votes => 0})
 		end
 		for submission in votes do
-			items = submission.split(':')[1].split(';')
+			items = submission.split(':').at(1).split(';')
 			for item in items do
-				if results[item]!=nil then
-					results[item] += 1
+				for result in results do
+					if result[:name]==item then
+						result[:votes] += 1
+					end
 				end
 			end
 		end
-		content = '<a class="back" href="/admin">&#11176;</a>';
-		content += votes.length.to_s+' mal abgestimmt<br /><br />'
-		for option in options do
-			content += option+' ('+results[option].to_s+')<br />'+'▮'*results[option]+'<br /><br />'
-		end
-	  return plain('Ergebnisse',content)
+		tpl = Template.new('results',{:votes => votes.length, :results => results})
+		return tpl.parse
 	else
 		session[:redirect] = '/results'
 		redirect '/'
@@ -122,13 +110,8 @@ end
 get '/codes' do
 	if session[:admin] then
 		codes = File.read('codes.txt').split("\n")
-		text = '<a class="back" href="/admin">&#11176;</a>';
-		text += '<p>Hinweis: Beim Erstellen neuer Codes werden alle bisherigen Daten ohne Nachfrage zurückgesetzt.</p>'
-		for code in codes do
-			text += '<div class="card">'+code+'</div>'
-		end
-		text += '<form method="post" action=""><input type="submit" value="Neu generieren" /></form>'
-	  return plain('Codes',text)
+		tpl = Template.new('codes',{:codes => codes})
+		return tpl.parse
 	else
 		session[:redirect] = '/codes'
 		redirect '/'
@@ -155,13 +138,26 @@ get '/:code' do
 	if !valid?(code) then
 		redirect '/'
 	end
-  options = File.read('options.txt').split("\n").shuffle()
-	form = '<input type="hidden" id="voted" name="voted" value="" />'
-	for option in options do
-		form += '<input type="button" value="'+option+'" onclick="clickButton(this);" /><br />'
+  options = []
+	for option in File.read('options.txt').split("\n").shuffle() do
+		options.push({:name => option.chop, :selected => false})
 	end
-	form += '<input type="submit" value="senden" />'
-  return form('Abstimmung',form,'')
+  votes = File.read('votes.txt').split("\n")
+	items = []
+	for submission in votes do
+		if (submission.start_with?(code))
+			items = submission.split(':').at(1).split(';')
+			for option in options do
+				if items.include?(option[:name]) then
+					option[:selected] = true
+				end
+			end
+		end
+	end
+	tpl = Template.new('vote',{:voted => items.join(';'), :options => options, :success => session[:success], :error => session[:error]})
+	session[:success] = false
+	session[:error] = false
+	return tpl.parse
 end
 
 post '/:code' do
@@ -176,13 +172,12 @@ post '/:code' do
 		end
 	end
 	vote = params['voted'].split(';')
-	text = '<a class="back" href="">&#11176;</a>';
 	if (vote.length==2) then
 		votes.push(code+':'+vote.join(';'))
 		File.write('votes.txt',votes.join("\n"))
-		text += '<p>Ihre Wahl wurde erfolgreich gespeichert.</p>'
+		session[:success] = '<p>Ihre Wahl wurde erfolgreich gespeichert.</p>'
 	else
-		text += '<p>Wählen Sie bitte genau zwei Projekte aus. Ihre Wahl wurde nicht gespeichert!</p>'
+		session[:error] = 'Wählen Sie bitte genau zwei Projekte aus. Ihre Wahl wurde nicht gespeichert!'
 	end
-  return plain('Abstimmung',text);
+	redirect '/'+code
 end

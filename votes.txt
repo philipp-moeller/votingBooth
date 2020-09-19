@@ -1,0 +1,7 @@
+FSZ:Wahl-mal-neu;Home Challenger
+AOV:Tauschrausch;Wahl-mal-neu
+KUV:Wahl-mal-neu;Don't eat alone
+SOG:Mini Hood;Tauschrausch
+DTW:Home Challenger;Mini Hood
+AHV:Wahl-mal-neu;Tauschrausch
+SKL:Home Challenger;Roomsystem

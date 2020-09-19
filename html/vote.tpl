@@ -2,7 +2,7 @@
   <head>
     <meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{title}}</title>
+    <title>Abstimmung</title>
     <script>
 			function clickButton(button) {
 				var elem = document.getElementById('voted');
@@ -21,10 +21,15 @@
 		<link rel="stylesheet" href="/style.css">
   </head>
   <body>
-    <h1>{{title}}</h1>
-		{{text}}
+    <h1>Abstimmung</h1>
+		{{?success}}<span class="success">{{success}}</span>{{/?}}
+		{{?error}}<span class="error">{{error}}</span>{{/?}}
     <form method="post" action="">
-      {{form}}
+      <input type="hidden" id="voted" name="voted" value="{{voted}}" />
+			{{~options}}
+			<input type="button" value="{{options.name}}" onclick="clickButton(this);" {{?options.selected}}class="selected"{{/?}} /><br />
+			{{/~}}
+			<input type="submit" value="senden" />
     </form>
   </body>
 </html>
